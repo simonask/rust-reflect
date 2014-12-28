@@ -1,0 +1,9 @@
+[package]
+
+name = "reflect"
+version = "0.0.1"
+authors = ["Simon Ask Ulsnes <simon@ulsnes.dk>"]
+
+[dependencies]
+phf = "*"
+phf_mac = "*"
