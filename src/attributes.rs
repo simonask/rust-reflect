@@ -10,6 +10,7 @@ impl Copy for AttrError {}
 pub type AttrResult<T> = Result<T, AttrError>;
 
 pub trait Attribute<O, T> {
+  fn to_any_attr<'a>(&'a self) -> &'a AnyAttribute;
   fn get_(&self, owner: &O) -> AttrResult<T>;
   fn set_(&self, owner: &mut O, new_value: T) -> AttrResult<()>;
 }
@@ -20,6 +21,7 @@ pub trait FieldAttribute<T> {
 }
 
 pub trait OwnerAttribute<O>: Sync + 'static {
+  fn to_any_attr<'a>(&'a self) -> &'a AnyAttribute;
   fn get(&self, owner: &O) -> AttrResult<Box<Any>>;
   fn set(&self, owner: &mut O, new_value: &Any) -> AttrResult<()>;
 }
@@ -48,8 +50,12 @@ impl<O, T, X> FieldAttribute<T> for X
 }
 
 impl<O, T, X> OwnerAttribute<O> for X
-  where X: Attribute<O, T> + Sync + 'static, T: Any + Clone + 'static
+  where X: Attribute<O, T> + Sync + 'static, T: Any + Clone + 'static, O: 'static
 {
+  fn to_any_attr<'a>(&'a self) -> &'a AnyAttribute {
+    (self as &Attribute<O, T>).to_any_attr()
+  }
+
   fn get(&self, owner: &O) -> AttrResult<Box<Any>> {
     let v = box try!(self.get_(owner));
     Ok(v as Box<Any>)

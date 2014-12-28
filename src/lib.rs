@@ -21,6 +21,9 @@ struct Foo {
 #[allow(non_camel_case_types)]
 struct Foo_Attributes_foo;
 impl Attribute<Foo, i32> for Foo_Attributes_foo {
+  fn to_any_attr<'a>(&'a self) -> &'a AnyAttribute {
+    self as &AnyAttribute
+  }
   fn get_(&self, owner: &Foo) -> AttrResult<i32> {
     Ok(owner.foo)
   }
@@ -37,20 +40,25 @@ static FOO_ATTRIBUTES: phf::Map<&'static str, fn() -> &'static OwnerAttribute<Fo
   "foo" => get_Foo_attribute_foo as fn() -> &'static OwnerAttribute<Foo>
 };
 
-impl Reflect for Foo {
-  fn type_info() -> TypeInfo<Foo> {
-    TypeInfo { name: "Foo", attributes: &FOO_ATTRIBUTES }
+static FOO_TYPE_INFO: TypeInfo<Foo> = TypeInfo {
+  name: "Foo",
+  attributes: &FOO_ATTRIBUTES
+};
+
+impl Reflect<'static> for Foo {
+  fn type_info() -> &'static TypeInfo<Foo> {
+    &FOO_TYPE_INFO
   }
 }
 
 #[test]
 fn get_name_of_type() {
-  let t: TypeInfo<Foo> = Reflect::type_info();
+  let t: &TypeInfo<Foo> = Reflect::type_info();
   assert!(t.name == "Foo");
 }
 
 #[test]
-fn get_member() {
+fn get_member_of_foo() {
   let foo = Foo { foo: 123 };
   let v = foo.get("foo");
   match v {
@@ -63,7 +71,7 @@ fn get_member() {
 }
 
 #[test]
-fn set_member() {
+fn set_member_of_foo() {
   let mut foo = Foo { foo: 123 };
   let new_value: i32 = 456;
   let v = foo.set("foo", &new_value);
