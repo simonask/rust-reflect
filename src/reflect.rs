@@ -3,7 +3,29 @@ use attributes::{AttrResult, AttrError};
 use std::any::{Any, AnyRefExt, AnyMutRefExt};
 
 pub trait Reflect<'a> {
-  fn type_info() -> &'a TypeInfo<Self>;
+  fn type_info() -> &'a TypeInfo;
+}
+
+pub struct StaticTypeInfo<T>(pub &'static TypeInfo);
+
+pub trait ReflectStatic {
+  fn static_type_info(_ignored: Option<Self>) -> StaticTypeInfo<Self>;
+}
+
+impl<T> Reflect<'static> for T where T: ReflectStatic
+{
+  fn type_info() -> &'static TypeInfo {
+    let StaticTypeInfo(sti) = ReflectStatic::static_type_info(None::<T>);
+    sti
+  }
+}
+
+pub struct GetType;
+impl GetType {
+  pub fn of<T: ReflectStatic>() -> &'static TypeInfo {
+    let StaticTypeInfo(sti) = ReflectStatic::static_type_info(None::<T>);
+    sti
+  }
 }
 
 pub trait Reflectable: Any {
@@ -48,24 +70,24 @@ impl<'a> ReflectableMutRefExt<'a> for &'a mut Reflectable {
 }
 
 impl<'a, T> Reflectable for T
-  where T: Reflect<'static> + 'static
+  where T: ReflectStatic + 'static
 {
   fn type_info(&self) -> &'static Type<'static> {
-    let t: &TypeInfo<T> = Reflect::type_info();
+    let t = GetType::of::<T>();
     t as &'static Type<'static>
   }
 
   fn get(&self, name: &str) -> AttrResult<Box<Reflectable>> {
-    let t: &TypeInfo<T> = Reflect::type_info();
-    match t.attributes.get(name) {
+    let ti = GetType::of::<T>();
+    match ti.attributes.get(name) {
       Some(attrfn) => (*attrfn)().get(self),
       None => Err(AttrError::UnknownAttribute)
     }
   }
 
   fn set(&mut self, name: &str, new_value: &Reflectable) -> AttrResult<()> {
-    let t: &TypeInfo<T> = Reflect::type_info();
-    match t.attributes.get(name) {
+    let ti = GetType::of::<T>();
+    match ti.attributes.get(name) {
       Some(attrfn) => (*attrfn)().set(self, new_value),
       None => Err(AttrError::UnknownAttribute)
     }

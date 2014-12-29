@@ -1,9 +1,9 @@
-use reflect::{Reflect, TypeInfo, Reflectable, ReflectableRefExt};
+use reflect::{Reflect, GetType, TypeInfo, Reflectable, ReflectableRefExt};
 use foo::{Foo};
 
 #[test]
 fn get_name_of_type() {
-  let t: &TypeInfo<Foo> = Reflect::type_info();
+  let t: &TypeInfo = GetType::of::<Foo>();
   assert!(t.name == "Foo");
 }
 

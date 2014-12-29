@@ -1,9 +1,9 @@
 use attributes::{OwnerAttribute, AnyAttribute};
 use phf;
 
-pub struct TypeInfo<T> {
+pub struct TypeInfo {
   pub name: &'static str,
-  pub attributes: &'static phf::Map<&'static str, fn() -> &'static OwnerAttribute<T>>
+  pub attributes: &'static phf::Map<&'static str, fn() -> &'static AnyAttribute>
 }
 
 pub trait Type<'a> {
@@ -11,7 +11,7 @@ pub trait Type<'a> {
   fn find_attribute(&self, name: &str) -> Option<&'a AnyAttribute>;
 }
 
-impl<T> Type<'static> for TypeInfo<T> {
+impl Type<'static> for TypeInfo {
   fn name(&self) -> &'static str {
     self.name
   }
@@ -20,7 +20,7 @@ impl<T> Type<'static> for TypeInfo<T> {
     match self.attributes.get(name) {
       Some(attrfn) => {
         let attr = (*attrfn)();
-        Some(attr.to_any_attr())
+        Some(attr)
       },
       None => None
     }
