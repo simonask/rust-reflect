@@ -26,17 +26,17 @@ fn get_Foo_attribute_foo() -> &'static OwnerAttribute<Foo> {
   &FOO_ATTRIBUTE_FOO as &OwnerAttribute<Foo>
 }
 
-static FOO_ATTRIBUTES: phf::Map<&'static str, fn() -> &'static OwnerAttribute<Foo>> = phf_map! {
-  "foo" => get_Foo_attribute_foo as fn() -> &'static OwnerAttribute<Foo>
-};
-
-static FOO_TYPE_INFO: TypeInfo<Foo> = TypeInfo {
-  name: "Foo",
-  attributes: &FOO_ATTRIBUTES
-};
-
 impl Reflect<'static> for Foo {
   fn type_info() -> &'static TypeInfo<Foo> {
+    static FOO_ATTRIBUTES: phf::Map<&'static str, fn() -> &'static OwnerAttribute<Foo>> = phf_map! {
+      "foo" => get_Foo_attribute_foo as fn() -> &'static OwnerAttribute<Foo>
+    };
+
+    static FOO_TYPE_INFO: TypeInfo<Foo> = TypeInfo {
+      name: "Foo",
+      attributes: &FOO_ATTRIBUTES
+    };
+
     &FOO_TYPE_INFO
   }
 }
