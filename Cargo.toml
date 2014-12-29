@@ -7,3 +7,6 @@ authors = ["Simon Ask Ulsnes <simon@ulsnes.dk>"]
 [dependencies]
 phf = "*"
 phf_mac = "*"
+
+[[test]]
+name = "tests"
