@@ -1,4 +1,5 @@
 #![feature(phase)]
+#![allow(missing_copy_implementations)]
 
 extern crate phf;
 #[phase(plugin)]
