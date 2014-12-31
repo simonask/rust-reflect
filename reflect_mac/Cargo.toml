@@ -2,6 +2,7 @@
 name = "reflect_mac"
 version = "0.0.1"
 authors = ["Simon Ask Ulsnes <simon@ulsnes.dk>"]
+license = "MIT"
 
 [lib]
 name = "reflect_mac"
