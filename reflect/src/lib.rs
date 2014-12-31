@@ -5,7 +5,7 @@ extern crate phf;
 #[phase(plugin)]
 extern crate phf_mac;
 
-pub use attributes::{OwnerAttribute, AnyAttribute, Attribute, AttrResult};
+pub use attributes::{OwnerAttribute, AnyAttribute, Attribute, AttrResult, AttributeMap};
 pub use type_info::{TypeInfo, Type};
 pub use reflect::{GetType, Reflect, ReflectStatic, Reflectable, ReflectableRefExt, ReflectableMutRefExt, StaticTypeInfo};
 

@@ -1,9 +1,9 @@
-use attributes::{OwnerAttribute, AnyAttribute};
+use attributes::{OwnerAttribute, AnyAttribute, AttributeMap};
 use phf;
 
 pub struct TypeInfo {
   pub name: &'static str,
-  pub attributes: &'static phf::Map<&'static str, fn() -> &'static AnyAttribute>
+  pub attributes: &'static AttributeMap,
 }
 
 pub trait Type<'a> {

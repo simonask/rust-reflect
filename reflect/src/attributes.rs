@@ -1,4 +1,5 @@
 use reflect::{Reflectable, ReflectableRefExt, ReflectableMutRefExt};
+use phf;
 
 pub enum AttrError {
   WrongTargetType,
@@ -28,6 +29,8 @@ pub trait AnyAttribute: Sync + 'static {
   fn get(&self, owner: &Reflectable) -> AttrResult<Box<Reflectable>>;
   fn set(&self, owner: &mut Reflectable, new_value: &Reflectable) -> AttrResult<()>;
 }
+
+pub type AttributeMap = phf::Map<&'static str, fn() -> &'static AnyAttribute>;
 
 impl<O, T, X> FieldAttribute<T> for X
   where X: Attribute<O, T>, O: Reflectable + 'static
