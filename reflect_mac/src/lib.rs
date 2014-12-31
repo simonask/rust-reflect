@@ -8,21 +8,18 @@ extern crate phf_mac;
 
 use syntax::ext::base::{ExtCtxt};
 use syntax::codemap::{Span};
-use syntax::ext::deriving;
 use syntax::ast;
 use syntax::ast::{ItemStruct, StructField};
 use syntax::ptr::P;
 use syntax::ext::deriving::generic::{Substructure};
-use syntax::ext::deriving::generic::ty::{Ty, PtrTy, Path, LifetimeBounds};
 use syntax::parse::token;
-use phf_mac::{macro_registrar};
 
 fn generate_attributes_map(
   c: &mut ExtCtxt,
   s: Span,
-  meta_item: &ast::MetaItem,
-  struct_item: &ast::Item,
-  substructure: &Substructure,
+  _: &ast::MetaItem,
+  _: &ast::Item,
+  _: &Substructure,
   fields: &Vec<StructField>
 ) -> P<ast::Item> {
   use syntax::ext::build::AstBuilder;
@@ -47,7 +44,7 @@ fn generate_attributes_map(
   // so replace ::phf::Map with ::reflect::AttributeMap (which is the same).
   let map_expr = created_map.make_expr().unwrap();
   let new_map_expr = match map_expr.node {
-    ast::ExprStruct(ref path, ref fields, ref expr) => {
+    ast::ExprStruct(_, ref fields, _) => {
       let new_path = c.path_global(s, vec!(c.ident_of("reflect"), c.ident_of("AttributeMap")));
       c.expr_struct(s, new_path, fields.clone())
     },
@@ -62,8 +59,8 @@ fn generate_attributes_map(
 fn generate_attribute_info_getter(
   c: &mut ExtCtxt,
   s: Span,
-  meta_item: &ast::MetaItem,
-  struct_item: &ast::Item,
+  _: &ast::MetaItem,
+  _: &ast::Item,
   substructure: &Substructure,
   field: &StructField
 ) -> P<ast::Item> {
@@ -92,7 +89,7 @@ fn generate_attribute_info_getter(
     }
   ).unwrap();
 
-  let mut stmts = vec!(
+  let stmts = vec!(
     c.stmt_item(s, attr_struct_def),
     c.stmt_item(s, attr_const_decl),
     c.stmt_item(s, attr_impl),
@@ -116,12 +113,6 @@ fn generate_attributes_info_getters(
   use syntax::ext::build::AstBuilder;
 
   fields.iter().map(|field| {
-    let ident = match field.node.ident() {
-      Some(i) => i,
-      None => {
-        c.span_bug(s, format!("unnamed field in normal struct in `reflect`").as_slice())
-      }
-    };
     let fn_item = generate_attribute_info_getter(c, s, meta_item, struct_item, substructure, field);
     c.stmt_item(s, fn_item)
   }).collect::<Vec<_>>()
@@ -137,7 +128,6 @@ fn generate_static_type_info_impl(
   use syntax::ext::build::AstBuilder;
 
   let self_name = token::get_ident(substructure.type_ident);
-  let type_info_ty = quote_ty!(c, ::reflect::TypeInfo);
 
   let fields = match struct_item.node {
     ItemStruct(ref struct_def, _) => &struct_def.fields,
@@ -173,7 +163,6 @@ fn generate_reflect_static_impl_for_struct<F>(
   struct_item: &ast::Item,
   push: F
 ) where F: FnOnce(P<ast::Item>) {
-  use syntax::ext::build::AstBuilder;
   use syntax::ext::deriving::generic::{TraitDef, MethodDef, combine_substructure};
   use syntax::ext::deriving::generic::ty::{Ty, Path, LifetimeBounds};
 
@@ -204,10 +193,10 @@ fn generate_reflect_static_impl_for_struct<F>(
 }
 
 fn reflect_expand(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>| ) {
-  use syntax::ast::{Item, Item_};
+  use syntax::ast::{Item_};
 
   match &item.node {
-    &Item_::ItemStruct(ref struct_def, ref generics) => {
+    &Item_::ItemStruct(_, _) => {
       generate_reflect_static_impl_for_struct(context, span, meta_item, item, |i| push(i));
     },
     _ => {
