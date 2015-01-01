@@ -19,7 +19,7 @@ extern crate reflect;
 #[phase(plugin)]
 extern crate reflect_mac;
 
-use reflect::{ReflectRefExt};
+use reflect::{ReflectRefExt, GetType, Type};
 
 #[reflect]
 struct Foo {
@@ -28,6 +28,8 @@ struct Foo {
 
 fn main() {
   let foo = Foo { foo: 123 };
+
+  println!("Name of type: {}", GetType::of::<Foo>().name());
 
   match foo.get("foo") {
     Ok(x) => match (*x).downcast_ref::<i32>() {
@@ -38,3 +40,11 @@ fn main() {
   }
 }
 ```
+
+# TODOs
+
+- Enums
+- Observers
+- Signals/slots
+- Getter/setter attributes
+- `#[omit_reflect]` attribute
