@@ -48,3 +48,4 @@ fn main() {
 - Signals/slots
 - Getter/setter attributes
 - `#[omit_reflect]` attribute
+- Serialization/deserialization interface
