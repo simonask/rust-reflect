@@ -10,9 +10,9 @@ path = "src/lib.rs"
 plugin = true
 test = false
 
-[dependencies.reflect]
-path = "../reflect"
-version = "=0.0.1"
+[dependencies]
+phf = "*"
+phf_mac = "*"
 
 [[test]]
 name = "tests"

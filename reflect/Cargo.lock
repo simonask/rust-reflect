@@ -4,6 +4,7 @@ version = "0.0.1"
 dependencies = [
  "phf 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "phf_mac 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reflect_mac 0.0.1",
 ]
 
 [[package]]
@@ -40,6 +41,14 @@ dependencies = [
 name = "phf_shared"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "reflect_mac"
+version = "0.0.1"
+dependencies = [
+ "phf 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "phf_mac 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "regex"

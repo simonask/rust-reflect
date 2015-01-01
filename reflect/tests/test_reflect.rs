@@ -1,5 +1,11 @@
-use reflect::{Reflect, GetType, TypeInfo, Reflectable, ReflectableRefExt};
-use foo::{Foo};
+use reflect::{GetType, TypeInfo, Reflect, ReflectRefExt};
+use std::borrow::ToOwned;
+
+#[reflect]
+struct Foo {
+  foo: i32,
+  bar: i64
+}
 
 #[test]
 fn get_name_of_type() {
@@ -9,7 +15,7 @@ fn get_name_of_type() {
 
 #[test]
 fn get_member_of_foo() {
-  let foo = Foo { foo: 123 };
+  let foo = Foo { foo: 123, bar: 64 };
   let v = foo.get("foo");
   match v {
     Ok(b) => match (*b).downcast_ref::<i32>() {
@@ -22,7 +28,7 @@ fn get_member_of_foo() {
 
 #[test]
 fn set_member_of_foo() {
-  let mut foo = Foo { foo: 123 };
+  let mut foo = Foo { foo: 123, bar: 64 };
   let new_value: i32 = 456;
   let v = foo.set("foo", &new_value);
   match v {
@@ -33,7 +39,7 @@ fn set_member_of_foo() {
 
 #[test]
 fn set_nonexisting_member_should_fail() {
-  let mut foo = Foo { foo: 123 };
+  let mut foo = Foo { foo: 123, bar: 64 };
   let new_value: i32 = 456;
   let v = foo.set("bar", &new_value);
   match v {
@@ -44,8 +50,8 @@ fn set_nonexisting_member_should_fail() {
 
 #[test]
 fn set_member_of_wrong_type_should_fail() {
-  let mut foo = Foo { foo: 123 };
-  let new_value = "Hello, World!";
+  let mut foo = Foo { foo: 123, bar: 64 };
+  let new_value = "Hello, World!".to_owned();
   let v = foo.set("foo", &new_value);
   match v {
     Err(_) => (),

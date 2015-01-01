@@ -8,5 +8,9 @@ license = "MIT"
 phf = "*"
 phf_mac = "*"
 
+[dependencies.reflect_mac]
+path = "../reflect_mac"
+version = "=0.0.1"
+
 [[test]]
 name = "tests"

@@ -1,4 +1,4 @@
-#![feature(phase)]
+#![feature(phase, macro_rules)]
 #![allow(missing_copy_implementations)]
 
 extern crate phf;
@@ -6,8 +6,8 @@ extern crate phf;
 extern crate phf_mac;
 
 pub use attributes::{OwnerAttribute, AnyAttribute, Attribute, AttrResult, AttributeMap};
-pub use type_info::{TypeInfo, Type};
-pub use reflect::{GetType, Reflect, ReflectStatic, Reflectable, ReflectableRefExt, ReflectableMutRefExt, StaticTypeInfo};
+pub use type_info::{TypeInfo, TypeInfoFor, Type, GetType};
+pub use reflect::{StaticReflection, Reflect, ReflectRefExt, ReflectMutRefExt};
 
 pub mod attributes;
 pub mod type_info;

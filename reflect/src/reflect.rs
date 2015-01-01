@@ -1,37 +1,15 @@
-use type_info::{Type, TypeInfo};
+use type_info::{Type, TypeInfoFor, GetType};
 use attributes::{AttrResult, AttrError};
 use std::any::{Any, AnyRefExt, AnyMutRefExt};
 
-pub trait Reflect<'a> {
-  fn type_info() -> &'a TypeInfo;
+pub trait StaticReflection {
+  fn type_info_for(_ignored: Option<Self>) -> TypeInfoFor<Self>;
 }
 
-pub struct StaticTypeInfo<T>(pub &'static TypeInfo);
-
-pub trait ReflectStatic {
-  fn static_type_info(_ignored: Option<Self>) -> StaticTypeInfo<Self>;
-}
-
-impl<T> Reflect<'static> for T where T: ReflectStatic
-{
-  fn type_info() -> &'static TypeInfo {
-    let StaticTypeInfo(sti) = ReflectStatic::static_type_info(None::<T>);
-    sti
-  }
-}
-
-pub struct GetType;
-impl GetType {
-  pub fn of<T: ReflectStatic>() -> &'static TypeInfo {
-    let StaticTypeInfo(sti) = ReflectStatic::static_type_info(None::<T>);
-    sti
-  }
-}
-
-pub trait Reflectable: Any {
+pub trait Reflect: Any {
   fn type_info(&self) -> &'static Type<'static>;
-  fn get(&self, name: &str) -> AttrResult<Box<Reflectable>>;
-  fn set(&mut self, name: &str, new_value: &Reflectable) -> AttrResult<()>;
+  fn get(&self, name: &str) -> AttrResult<Box<Reflect>>;
+  fn set(&mut self, name: &str, new_value: &Reflect) -> AttrResult<()>;
 
   // The following is because we want to reuse the definition of downcast/is from
   // AnyRefExt+AnyMutRefExt, but we can't cast between traits. :-(
@@ -44,16 +22,16 @@ pub trait Reflectable: Any {
   }
 }
 
-pub trait ReflectableRefExt<'a> {
+pub trait ReflectRefExt<'a> {
   fn is<T: 'static>(self) -> bool;
   fn downcast_ref<T: 'static>(self) -> Option<&'a T>;
 }
 
-pub trait ReflectableMutRefExt<'a> {
+pub trait ReflectMutRefExt<'a> {
   fn downcast_mut<T: 'static>(self) -> Option<&'a mut T>;
 }
 
-impl<'a> ReflectableRefExt<'a> for &'a Reflectable {
+impl<'a> ReflectRefExt<'a> for &'a Reflect {
   fn is<T: 'static>(self) -> bool {
     self.as_any_ref().is::<T>()
   }
@@ -63,21 +41,21 @@ impl<'a> ReflectableRefExt<'a> for &'a Reflectable {
   }
 }
 
-impl<'a> ReflectableMutRefExt<'a> for &'a mut Reflectable {
+impl<'a> ReflectMutRefExt<'a> for &'a mut Reflect {
   fn downcast_mut<T: 'static>(self) -> Option<&'a mut T> {
     self.as_any_mut_ref().downcast_mut::<T>()
   }
 }
 
-impl<'a, T> Reflectable for T
-  where T: ReflectStatic + 'static
+impl<'a, T> Reflect for T
+  where T: StaticReflection + 'static
 {
   fn type_info(&self) -> &'static Type<'static> {
     let t = GetType::of::<T>();
     t as &'static Type<'static>
   }
 
-  fn get(&self, name: &str) -> AttrResult<Box<Reflectable>> {
+  fn get(&self, name: &str) -> AttrResult<Box<Reflect>> {
     let ti = GetType::of::<T>();
     match ti.attributes.get(name) {
       Some(attrfn) => (*attrfn)().get(self),
@@ -85,7 +63,7 @@ impl<'a, T> Reflectable for T
     }
   }
 
-  fn set(&mut self, name: &str, new_value: &Reflectable) -> AttrResult<()> {
+  fn set(&mut self, name: &str, new_value: &Reflect) -> AttrResult<()> {
     let ti = GetType::of::<T>();
     match ti.attributes.get(name) {
       Some(attrfn) => (*attrfn)().set(self, new_value),

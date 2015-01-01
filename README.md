@@ -19,7 +19,7 @@ extern crate reflect;
 #[phase(plugin)]
 extern crate reflect_mac;
 
-use reflect::{ReflectableRefExt};
+use reflect::{ReflectRefExt};
 
 #[reflect]
 struct Foo {

@@ -1,6 +1,5 @@
 #![feature(plugin_registrar, phase, quote, macro_rules)]
 
-extern crate reflect;
 extern crate rustc;
 extern crate syntax;
 extern crate phf;
@@ -11,7 +10,6 @@ use syntax::codemap::{Span};
 use syntax::ast;
 use syntax::ast::{ItemStruct, StructField};
 use syntax::ptr::P;
-use syntax::ext::deriving::generic::{Substructure};
 use syntax::parse::token;
 
 fn generate_attributes_map(
@@ -19,7 +17,6 @@ fn generate_attributes_map(
   s: Span,
   _: &ast::MetaItem,
   _: &ast::Item,
-  _: &Substructure,
   fields: &Vec<StructField>
 ) -> P<ast::Item> {
   use syntax::ext::build::AstBuilder;
@@ -60,8 +57,7 @@ fn generate_attribute_info_getter(
   c: &mut ExtCtxt,
   s: Span,
   _: &ast::MetaItem,
-  _: &ast::Item,
-  substructure: &Substructure,
+  struct_item: &ast::Item,
   field: &StructField
 ) -> P<ast::Item> {
   use syntax::ext::build::AstBuilder;
@@ -75,7 +71,7 @@ fn generate_attribute_info_getter(
   let attr_const_decl = quote_item!(c, static ATTR: Attr = Attr;).unwrap();
 
   let field_ty = field.node.ty.clone();
-  let self_ty = substructure.type_ident;
+  let self_ty = struct_item.ident;
 
   let attr_impl = quote_item!(c,
     impl ::reflect::Attribute<$self_ty, $field_ty> for Attr {
@@ -107,36 +103,34 @@ fn generate_attributes_info_getters(
   s: Span,
   meta_item: &ast::MetaItem,
   struct_item: &ast::Item,
-  substructure: &Substructure,
   fields: &Vec<StructField>
 ) -> Vec<P<ast::Stmt>> {
   use syntax::ext::build::AstBuilder;
 
   fields.iter().map(|field| {
-    let fn_item = generate_attribute_info_getter(c, s, meta_item, struct_item, substructure, field);
+    let fn_item = generate_attribute_info_getter(c, s, meta_item, struct_item, field);
     c.stmt_item(s, fn_item)
   }).collect::<Vec<_>>()
 }
 
-fn generate_static_type_info_impl(
+fn generate_type_info_for_impl(
   c: &mut ExtCtxt,
   s: Span,
   meta_item: &ast::MetaItem,
   struct_item: &ast::Item,
-  substructure: &Substructure
 ) -> P<ast::Expr> {
   use syntax::ext::build::AstBuilder;
 
-  let self_name = token::get_ident(substructure.type_ident);
+  let self_name = token::get_ident(struct_item.ident);
 
   let fields = match struct_item.node {
     ItemStruct(ref struct_def, _) => &struct_def.fields,
     _ => c.span_bug(s, format!("Expected struct, got {}", struct_item).as_slice())
   };
 
-  let attribute_getters = generate_attributes_info_getters(c, s, meta_item, struct_item, substructure, fields);
+  let attribute_getters = generate_attributes_info_getters(c, s, meta_item, struct_item, fields);
 
-  let attributes_decl = generate_attributes_map(c, s, meta_item, struct_item, substructure, fields);
+  let attributes_decl = generate_attributes_map(c, s, meta_item, struct_item, fields);
 
   let name_expr = c.expr_str(s, self_name);
 
@@ -153,43 +147,28 @@ fn generate_static_type_info_impl(
   );
   stmts.push_all(attribute_getters.as_slice());
 
-  c.expr_block(c.block(s, stmts, Some(quote_expr!(c, ::reflect::StaticTypeInfo(&TYPE_INFO)))))
+  c.expr_block(c.block(s, stmts, Some(quote_expr!(c, ::reflect::TypeInfoFor(&TYPE_INFO)))))
 }
 
 fn generate_reflect_static_impl_for_struct<F>(
-  ctx: &mut ExtCtxt,
-  span: Span,
+  c: &mut ExtCtxt,
+  s: Span,
   meta_item: &ast::MetaItem,
   struct_item: &ast::Item,
   push: F
 ) where F: FnOnce(P<ast::Item>) {
-  use syntax::ext::deriving::generic::{TraitDef, MethodDef, combine_substructure};
-  use syntax::ext::deriving::generic::ty::{Ty, Path, LifetimeBounds};
+  let ty = struct_item.ident;
+  let type_info_for_impl = generate_type_info_for_impl(c, s, meta_item, struct_item);
 
-  let path = Path::new_local(struct_item.ident.as_str());
-
-  let trait_def = TraitDef {
-    span: span,
-    attributes: Vec::new(),
-    path: Path::new(vec!("reflect", "ReflectStatic")),
-    additional_bounds: Vec::new(),
-    generics: LifetimeBounds::empty(),
-    methods: vec!(
-      MethodDef {
-        name: "static_type_info",
-        generics: LifetimeBounds::empty(),
-        explicit_self: None,
-        args: vec!(Ty::Literal(Path::new_(vec!("std", "option", "Option"), None, vec!(box Ty::Literal(path.clone())), false))),
-        ret_ty: Ty::Literal(Path::new_(vec!("reflect", "StaticTypeInfo"), None, vec!(box Ty::Literal(path.clone())), false)),
-        attributes: Vec::new(),
-        combine_substructure: combine_substructure(|c, s, sub| {
-          generate_static_type_info_impl(c, s, meta_item, struct_item, sub)
-        }),
+  let trait_def = quote_item!(c,
+    impl ::reflect::StaticReflection for $ty {
+      fn type_info_for(_: Option<$ty>) -> ::reflect::TypeInfoFor<$ty> {
+        $type_info_for_impl
       }
-    )
-  };
+    }
+  ).unwrap();
 
-  trait_def.expand(ctx, meta_item, struct_item, push);
+  push(trait_def);
 }
 
 fn reflect_expand(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>| ) {

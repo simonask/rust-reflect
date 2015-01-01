@@ -2,9 +2,7 @@
 #![feature(phase)]
 
 extern crate reflect;
-extern crate phf;
 #[phase(plugin)]
-extern crate phf_mac;
+extern crate reflect_mac;
 
 mod test_reflect;
-mod foo;
