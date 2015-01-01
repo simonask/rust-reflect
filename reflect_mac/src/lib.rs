@@ -67,35 +67,30 @@ fn generate_attribute_info_getter(
     None => c.span_bug(s, format!("unnamed field in normal struct").as_slice())
   };
 
-  let attr_struct_def = quote_item!(c, struct Attr;).unwrap();
-  let attr_const_decl = quote_item!(c, static ATTR: Attr = Attr;).unwrap();
-
   let field_ty = field.node.ty.clone();
   let self_ty = struct_item.ident;
+  let fn_name = c.ident_of(format!("attr_{}", ident.as_str()).as_slice());
 
-  let attr_impl = quote_item!(c,
-    impl ::reflect::Attribute<$self_ty, $field_ty> for Attr {
-      fn get_(&self, instance: &$self_ty) -> ::reflect::AttrResult<$field_ty> {
-        Ok(instance.$ident.clone())
+  let item_fn = quote_item!(c,
+    fn $fn_name() -> &'static ::reflect::AnyAttribute {
+      struct Attr;
+      static ATTR: Attr = Attr;
+
+      impl ::reflect::Attribute<$self_ty, $field_ty> for Attr {
+        fn get_(&self, instance: &$self_ty) -> ::reflect::AttrResult<$field_ty> {
+          Ok(instance.$ident.clone())
+        }
+        fn set_(&self, instance: &mut $self_ty, new_value: $field_ty) -> ::reflect::AttrResult<()> {
+          instance.$ident = new_value;
+          Ok(())
+        }
       }
-      fn set_(&self, instance: &mut $self_ty, new_value: $field_ty) -> ::reflect::AttrResult<()> {
-        instance.$ident = new_value;
-        Ok(())
-      }
+
+      &ATTR as &::reflect::AnyAttribute
     }
   ).unwrap();
 
-  let stmts = vec!(
-    c.stmt_item(s, attr_struct_def),
-    c.stmt_item(s, attr_const_decl),
-    c.stmt_item(s, attr_impl),
-  );
-
-  let return_type = quote_ty!(c, &'static ::reflect::AnyAttribute);
-  let return_value = quote_expr!(c, &ATTR as &::reflect::AnyAttribute);
-  let fn_body = c.block(s, stmts, Some(return_value));
-  let fn_name = c.ident_of(format!("attr_{}", ident.as_str()).as_slice());
-  c.item_fn(s, fn_name, Vec::new(), return_type, fn_body)
+  item_fn
 }
 
 fn generate_attributes_info_getters(
