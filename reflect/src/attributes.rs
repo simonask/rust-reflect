@@ -1,4 +1,5 @@
-use reflect::{Reflect, ReflectRefExt, ReflectMutRefExt};
+use reflect::{StaticReflection, Reflect, ReflectRefExt, ReflectMutRefExt};
+use type_info::{Type, GetType};
 use phf;
 
 pub enum AttrError {
@@ -23,11 +24,13 @@ pub trait FieldAttribute<T> {
 pub trait OwnerAttribute<O>: Sync + 'static {
   fn get(&self, owner: &O) -> AttrResult<Box<Reflect>>;
   fn set(&self, owner: &mut O, new_value: &Reflect) -> AttrResult<()>;
+  fn type_info(&self) -> &'static Type<'static>;
 }
 
 pub trait AnyAttribute: Sync + 'static {
   fn get(&self, owner: &Reflect) -> AttrResult<Box<Reflect>>;
   fn set(&self, owner: &mut Reflect, new_value: &Reflect) -> AttrResult<()>;
+  fn type_info(&self) -> &'static Type<'static>;
 }
 
 pub type AttributeMap = phf::Map<&'static str, fn() -> &'static AnyAttribute>;
@@ -51,7 +54,7 @@ impl<O, T, X> FieldAttribute<T> for X
 }
 
 impl<O, T, X> OwnerAttribute<O> for X
-  where X: Attribute<O, T> + Sync + 'static, T: Reflect + Clone + 'static, O: 'static
+  where X: Attribute<O, T> + Sync + 'static, T: StaticReflection + Reflect + Clone + 'static, O: 'static
 {
   fn get(&self, owner: &O) -> AttrResult<Box<Reflect>> {
     let v = box try!(self.get_(owner));
@@ -66,10 +69,14 @@ impl<O, T, X> OwnerAttribute<O> for X
       None => Err(AttrError::WrongValueType)
     }
   }
+
+  fn type_info(&self) -> &'static Type<'static> {
+    GetType::of::<T>() as &Type<'static>
+  }
 }
 
 impl<O, T, X> AnyAttribute for X
-  where X: Attribute<O, T> + Sync + 'static, T: Reflect + Clone + 'static, O: Reflect + 'static
+  where X: Attribute<O, T> + Sync + 'static, T: StaticReflection + Reflect + Clone + 'static, O: Reflect + 'static
 {
   fn get(&self, owner: &Reflect) -> AttrResult<Box<Reflect>> {
     match owner.downcast_ref::<O>() {
@@ -91,5 +98,9 @@ impl<O, T, X> AnyAttribute for X
       },
       None => Err(AttrError::WrongTargetType)
     }
+  }
+
+  fn type_info(&self) -> &'static Type<'static> {
+    GetType::of::<T>() as &Type<'static>
   }
 }

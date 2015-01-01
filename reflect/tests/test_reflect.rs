@@ -1,4 +1,4 @@
-use reflect::{GetType, TypeInfo, Reflect, ReflectRefExt};
+use reflect::{GetType, Type, Reflect, ReflectRefExt};
 use std::default::Default;
 use std::borrow::ToOwned;
 
@@ -19,8 +19,18 @@ impl Default for Foo {
 
 #[test]
 fn get_name_of_type() {
-  let t: &TypeInfo = GetType::of::<Foo>();
-  assert!(t.name == "Foo");
+  let t = GetType::of::<Foo>();
+  assert!(t.name() == "Foo");
+}
+
+#[test]
+fn get_type_of_attribute() {
+  let t = GetType::of::<Foo>();
+  let field = t.find_attribute("foo");
+  match field {
+    Some(f) => assert!(f.type_info().name() == GetType::of::<i32>().name()),
+    None => assert!(false, "Member 'foo' did not exist.")
+  }
 }
 
 #[test]
