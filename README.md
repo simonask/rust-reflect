@@ -12,14 +12,14 @@ unexpectedly as new versions of the Rust compiler are released.
 
 ## Example
 
-```
+```rust
 #![feature(phase)]
 
 extern crate reflect;
 #[phase(plugin)]
 extern crate reflect_mac;
 
-use reflect::{ReflectRefExt, GetType, Type};
+use reflect::{Reflect, ReflectRefExt, GetType, Type};
 
 #[reflect]
 struct Foo {
