@@ -113,6 +113,7 @@ fn generate_type_info_for_impl(
 ) -> P<ast::Expr> {
   use syntax::ext::build::AstBuilder;
 
+  // TODO: Get fully qualified name with all modules etc.
   let self_name = token::get_ident(struct_item.ident);
 
   let fields = match struct_item.node {
