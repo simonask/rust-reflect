@@ -1,10 +1,20 @@
 use reflect::{GetType, TypeInfo, Reflect, ReflectRefExt};
+use std::default::Default;
 use std::borrow::ToOwned;
 
 #[reflect]
 struct Foo {
   foo: i32,
-  bar: i64
+  bar: String,
+}
+
+impl Default for Foo {
+  fn default() -> Foo {
+    Foo {
+      foo: 123,
+      bar: "Hello, World!".to_owned()
+    }
+  }
 }
 
 #[test]
@@ -15,7 +25,7 @@ fn get_name_of_type() {
 
 #[test]
 fn get_member_of_foo() {
-  let foo = Foo { foo: 123, bar: 64 };
+  let foo: Foo = Default::default();
   let v = foo.get("foo");
   match v {
     Ok(b) => match (*b).downcast_ref::<i32>() {
@@ -28,7 +38,7 @@ fn get_member_of_foo() {
 
 #[test]
 fn set_member_of_foo() {
-  let mut foo = Foo { foo: 123, bar: 64 };
+  let mut foo: Foo = Default::default();
   let new_value: i32 = 456;
   let v = foo.set("foo", &new_value);
   match v {
@@ -39,7 +49,7 @@ fn set_member_of_foo() {
 
 #[test]
 fn set_nonexisting_member_should_fail() {
-  let mut foo = Foo { foo: 123, bar: 64 };
+  let mut foo: Foo = Default::default();
   let new_value: i32 = 456;
   let v = foo.set("bar", &new_value);
   match v {
@@ -50,7 +60,7 @@ fn set_nonexisting_member_should_fail() {
 
 #[test]
 fn set_member_of_wrong_type_should_fail() {
-  let mut foo = Foo { foo: 123, bar: 64 };
+  let mut foo: Foo = Default::default();
   let new_value = "Hello, World!".to_owned();
   let v = foo.set("foo", &new_value);
   match v {
