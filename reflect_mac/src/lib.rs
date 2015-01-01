@@ -23,8 +23,7 @@ fn generate_attributes_map(
 
   let entries = fields.iter().map(|ref field| {
     let ident = field.node.ident().unwrap();
-    let key = phf_mac::util::Key::Str(token::get_ident(ident.clone()));
-    let key_contents = key.clone();
+    let key_contents = phf_mac::util::Key::Str(token::get_ident(ident.clone()));
     let fn_name = c.ident_of(format!("attr_{}", ident.as_str()).as_slice());
     phf_mac::util::Entry {
       key: c.expr_lit(s, ast::LitStr(token::get_ident(ident.clone()), ast::StrStyle::CookedStr)),
@@ -71,7 +70,7 @@ fn generate_attribute_info_getter(
   let self_ty = struct_item.ident;
   let fn_name = c.ident_of(format!("attr_{}", ident.as_str()).as_slice());
 
-  let item_fn = quote_item!(c,
+  quote_item!(c,
     fn $fn_name() -> &'static ::reflect::AnyAttribute {
       struct Attr;
       static ATTR: Attr = Attr;
@@ -88,9 +87,7 @@ fn generate_attribute_info_getter(
 
       &ATTR as &::reflect::AnyAttribute
     }
-  ).unwrap();
-
-  item_fn
+  ).unwrap()
 }
 
 fn generate_attributes_info_getters(
@@ -124,9 +121,7 @@ fn generate_type_info_for_impl(
   };
 
   let attribute_getters = generate_attributes_info_getters(c, s, meta_item, struct_item, fields);
-
   let attributes_decl = generate_attributes_map(c, s, meta_item, struct_item, fields);
-
   let name_expr = c.expr_str(s, self_name);
 
   let type_info_initializer = quote_expr!(c, ::reflect::TypeInfo {
