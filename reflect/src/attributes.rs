@@ -12,8 +12,8 @@ impl Copy for AttrError {}
 pub type AttrResult<T> = Result<T, AttrError>;
 
 pub trait Attribute<O, T> {
-  fn get_(&self, owner: &O) -> AttrResult<T>;
-  fn set_(&self, owner: &mut O, new_value: T) -> AttrResult<()>;
+  fn get(&self, owner: &O) -> AttrResult<T>;
+  fn set(&self, owner: &mut O, new_value: T) -> AttrResult<()>;
 }
 
 pub trait FieldAttribute<T> {
@@ -40,14 +40,14 @@ impl<O, T, X> FieldAttribute<T> for X
 {
   fn get(&self, owner: &Reflect) -> AttrResult<T> {
     match owner.downcast_ref::<O>() {
-      Some(o) => self.get_(o),
+      Some(o) => self.get(o),
       None => Err(AttrError::WrongTargetType)
     }
   }
 
   fn set(&self, owner: &mut Reflect, new_value: T) -> AttrResult<()> {
     match owner.downcast_mut::<O>() {
-      Some(o) => self.set_(o, new_value),
+      Some(o) => self.set(o, new_value),
       None => Err(AttrError::WrongTargetType)
     }
   }
@@ -57,14 +57,14 @@ impl<O, T, X> OwnerAttribute<O> for X
   where X: Attribute<O, T> + Sync + 'static, T: GetTypeInfo + Reflect + Clone + 'static, O: 'static
 {
   fn get(&self, owner: &O) -> AttrResult<Box<Reflect>> {
-    let v = box try!(self.get_(owner));
+    let v = box try!((self as &Attribute<O, T>).get(owner));
     Ok(v as Box<Reflect>)
   }
 
   fn set(&self, owner: &mut O, new_value: &Reflect) -> AttrResult<()> {
     match new_value.downcast_ref::<T>() {
       Some(x) => {
-        self.set_(owner, (*x).clone())
+        (self as &Attribute<O, T>).set(owner, (*x).clone())
       },
       None => Err(AttrError::WrongValueType)
     }
@@ -81,7 +81,7 @@ impl<O, T, X> AnyAttribute for X
   fn get(&self, owner: &Reflect) -> AttrResult<Box<Reflect>> {
     match owner.downcast_ref::<O>() {
       Some(o) => {
-        let v = box try!(self.get_(o));
+        let v = box try!((self as &Attribute<O, T>).get(o));
         Ok(v as Box<Reflect>)
       },
       None => Err(AttrError::WrongTargetType)
@@ -92,7 +92,7 @@ impl<O, T, X> AnyAttribute for X
     match owner.downcast_mut::<O>() {
       Some(o) => {
         match new_value.downcast_ref::<T>() {
-          Some(x) => Ok(try!(self.set_(o, x.clone()))),
+          Some(x) => Ok(try!((self as &Attribute<O, T>).set(o, x.clone()))),
           None => Err(AttrError::WrongValueType)
         }
       },

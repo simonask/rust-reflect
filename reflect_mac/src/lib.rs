@@ -76,10 +76,10 @@ fn generate_attribute_info_getter(
       static ATTR: Attr = Attr;
 
       impl ::reflect::Attribute<$self_ty, $field_ty> for Attr {
-        fn get_(&self, instance: &$self_ty) -> ::reflect::AttrResult<$field_ty> {
+        fn get(&self, instance: &$self_ty) -> ::reflect::AttrResult<$field_ty> {
           Ok(instance.$ident.clone())
         }
-        fn set_(&self, instance: &mut $self_ty, new_value: $field_ty) -> ::reflect::AttrResult<()> {
+        fn set(&self, instance: &mut $self_ty, new_value: $field_ty) -> ::reflect::AttrResult<()> {
           instance.$ident = new_value;
           Ok(())
         }
