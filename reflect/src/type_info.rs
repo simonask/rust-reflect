@@ -1,5 +1,4 @@
 use attributes::{OwnerAttribute, AnyAttribute, AttributeMap};
-use reflect::{StaticReflection};
 
 pub struct TypeInfo {
   pub name: &'static str,
@@ -7,6 +6,10 @@ pub struct TypeInfo {
 }
 
 pub struct TypeInfoFor<T>(pub &'static TypeInfo);
+
+pub trait GetTypeInfo {
+  fn get_type_info(_ignored: Option<Self>) -> TypeInfoFor<Self>;
+}
 
 pub trait Type<'a> {
   fn name(&self) -> &'a str;
@@ -16,8 +19,8 @@ pub trait Type<'a> {
 pub struct GetType;
 
 impl GetType {
-  pub fn of<T: StaticReflection>() -> &'static TypeInfo {
-    let TypeInfoFor(ti) = StaticReflection::type_info_for(None::<T>);
+  pub fn of<T: GetTypeInfo>() -> &'static TypeInfo {
+    let TypeInfoFor(ti) = GetTypeInfo::get_type_info(None::<T>);
     ti
   }
 }

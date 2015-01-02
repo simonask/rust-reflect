@@ -6,8 +6,8 @@ extern crate phf;
 extern crate phf_mac;
 
 pub use attributes::{OwnerAttribute, AnyAttribute, Attribute, AttrResult, AttributeMap};
-pub use type_info::{TypeInfo, TypeInfoFor, Type, GetType};
-pub use reflect::{StaticReflection, Reflect, ReflectRefExt, ReflectMutRefExt};
+pub use type_info::{TypeInfo, GetTypeInfo, TypeInfoFor, Type, GetType};
+pub use reflect::{Reflect, ReflectRefExt, ReflectMutRefExt};
 
 pub mod attributes;
 pub mod type_info;

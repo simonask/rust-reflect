@@ -1,11 +1,10 @@
-use reflect::{StaticReflection};
-use type_info::{TypeInfo, TypeInfoFor};
+use type_info::{TypeInfo, TypeInfoFor, GetTypeInfo};
 use phf;
 
 macro_rules! reflection_for {
   ($ty:ty, $name:expr) => {
-    impl StaticReflection for $ty {
-      fn type_info_for(_: Option<$ty>) -> TypeInfoFor<$ty> {
+    impl GetTypeInfo for $ty {
+      fn get_type_info(_: Option<$ty>) -> TypeInfoFor<$ty> {
         static TYPE_INFO: TypeInfo = TypeInfo {
           name: $name,
           attributes: &phf_map!()

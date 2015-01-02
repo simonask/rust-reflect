@@ -1,10 +1,6 @@
-use type_info::{Type, TypeInfoFor, GetType};
+use type_info::{Type, GetType, GetTypeInfo};
 use attributes::{AttrResult, AttrError};
 use std::any::{Any, AnyRefExt, AnyMutRefExt};
-
-pub trait StaticReflection {
-  fn type_info_for(_ignored: Option<Self>) -> TypeInfoFor<Self>;
-}
 
 pub trait Reflect: Any {
   fn type_info(&self) -> &'static Type<'static>;
@@ -48,7 +44,7 @@ impl<'a> ReflectMutRefExt<'a> for &'a mut Reflect {
 }
 
 impl<'a, T> Reflect for T
-  where T: StaticReflection + 'static
+  where T: GetTypeInfo + 'static
 {
   fn type_info(&self) -> &'static Type<'static> {
     let t = GetType::of::<T>();

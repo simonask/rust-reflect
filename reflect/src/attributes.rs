@@ -1,5 +1,5 @@
-use reflect::{StaticReflection, Reflect, ReflectRefExt, ReflectMutRefExt};
-use type_info::{Type, GetType};
+use reflect::{Reflect, ReflectRefExt, ReflectMutRefExt};
+use type_info::{Type, GetType, GetTypeInfo};
 use phf;
 
 pub enum AttrError {
@@ -54,7 +54,7 @@ impl<O, T, X> FieldAttribute<T> for X
 }
 
 impl<O, T, X> OwnerAttribute<O> for X
-  where X: Attribute<O, T> + Sync + 'static, T: StaticReflection + Reflect + Clone + 'static, O: 'static
+  where X: Attribute<O, T> + Sync + 'static, T: GetTypeInfo + Reflect + Clone + 'static, O: 'static
 {
   fn get(&self, owner: &O) -> AttrResult<Box<Reflect>> {
     let v = box try!(self.get_(owner));
@@ -76,7 +76,7 @@ impl<O, T, X> OwnerAttribute<O> for X
 }
 
 impl<O, T, X> AnyAttribute for X
-  where X: Attribute<O, T> + Sync + 'static, T: StaticReflection + Reflect + Clone + 'static, O: Reflect + 'static
+  where X: Attribute<O, T> + Sync + 'static, T: GetTypeInfo + Reflect + Clone + 'static, O: Reflect + 'static
 {
   fn get(&self, owner: &Reflect) -> AttrResult<Box<Reflect>> {
     match owner.downcast_ref::<O>() {

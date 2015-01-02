@@ -152,8 +152,8 @@ fn generate_reflect_static_impl_for_struct<F>(
   let type_info_for_impl = generate_type_info_for_impl(c, s, meta_item, struct_item);
 
   let trait_def = quote_item!(c,
-    impl ::reflect::StaticReflection for $ty {
-      fn type_info_for(_: Option<$ty>) -> ::reflect::TypeInfoFor<$ty> {
+    impl ::reflect::GetTypeInfo for $ty {
+      fn get_type_info(_: Option<$ty>) -> ::reflect::TypeInfoFor<$ty> {
         $type_info_for_impl
       }
     }
