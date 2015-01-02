@@ -105,12 +105,12 @@ fn generate_attributes_info_getters(
   }).collect::<Vec<_>>()
 }
 
-fn generate_type_info_for_impl(
+fn generate_get_type_info_fn_impl(
   c: &mut ExtCtxt,
   s: Span,
   meta_item: &ast::MetaItem,
   struct_item: &ast::Item,
-) -> P<ast::Expr> {
+) -> P<ast::Block> {
   use syntax::ext::build::AstBuilder;
 
   // TODO: Get fully qualified name with all modules etc.
@@ -121,53 +121,57 @@ fn generate_type_info_for_impl(
     _ => c.span_bug(s, format!("Expected struct, got {}", struct_item).as_slice())
   };
 
-  let attribute_getters = generate_attributes_info_getters(c, s, meta_item, struct_item, fields);
-  let attributes_decl = generate_attributes_map(c, s, meta_item, struct_item, fields);
-  let name_expr = c.expr_str(s, self_name);
+  let mut stmts = generate_attributes_info_getters(c, s, meta_item, struct_item, fields);
+  let generated_attr_map = generate_attributes_map(c, s, meta_item, struct_item, fields);
+  stmts.push(c.stmt_item(s, generated_attr_map));
 
+  let name_expr = c.expr_str(s, self_name);
   let type_info_initializer = quote_expr!(c, ::reflect::TypeInfo {
     name: $name_expr,
     attributes: &ATTRIBUTES,
   });
 
   let type_info_decl = quote_item!(c, static TYPE_INFO: ::reflect::TypeInfo = $type_info_initializer;).unwrap();
+  stmts.push(c.stmt_item(s, type_info_decl));
+  let retval = quote_expr!(c, ::reflect::TypeInfoFor(&TYPE_INFO));
 
-  let mut stmts = vec!(
-    c.stmt_item(s, attributes_decl),
-    c.stmt_item(s, type_info_decl)
-  );
-  stmts.push_all(attribute_getters.as_slice());
-
-  c.expr_block(c.block(s, stmts, Some(quote_expr!(c, ::reflect::TypeInfoFor(&TYPE_INFO)))))
+  c.block(s, stmts, Some(retval))
 }
 
-fn generate_reflect_static_impl_for_struct<F>(
+fn generate_get_type_info_impl_for_struct(
   c: &mut ExtCtxt,
   s: Span,
   meta_item: &ast::MetaItem,
   struct_item: &ast::Item,
-  push: F
-) where F: FnOnce(P<ast::Item>) {
+) -> P<ast::Item> {
   let ty = struct_item.ident;
-  let type_info_for_impl = generate_type_info_for_impl(c, s, meta_item, struct_item);
+  let type_info_for_impl = generate_get_type_info_fn_impl(c, s, meta_item, struct_item);
 
-  let trait_def = quote_item!(c,
+  quote_item!(c,
     impl ::reflect::GetTypeInfo for $ty {
-      fn get_type_info(_: Option<$ty>) -> ::reflect::TypeInfoFor<$ty> {
+      fn get_type_info(_: Option<$ty>) -> ::reflect::TypeInfoFor<$ty>
         $type_info_for_impl
-      }
     }
-  ).unwrap();
-
-  push(trait_def);
+  ).unwrap()
 }
 
-fn reflect_expand(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>| ) {
+pub fn reflect_on_struct(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>|) {
   use syntax::ast::{Item_};
-
   match &item.node {
     &Item_::ItemStruct(_, _) => {
-      generate_reflect_static_impl_for_struct(context, span, meta_item, item, |i| push(i));
+      push(generate_get_type_info_impl_for_struct(context, span, meta_item, item))
+    },
+    _ => {
+      context.span_bug(span, "reflect_on_struct called with non-struct argument.");
+    }
+  };
+}
+
+fn expand_reflect(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>| ) {
+  use syntax::ast::{Item_};
+  match &item.node {
+    &Item_::ItemStruct(_, _) => {
+      reflect_on_struct(context, span, meta_item, item, push);
     },
     _ => {
       context.span_err(span, "#[reflect] attribute can only be used on structs and enums.")
@@ -181,6 +185,6 @@ pub fn registrar(reg: &mut rustc::plugin::Registry) {
   use syntax::parse::token::intern;
 
   let interned_name = intern("reflect");
-  let decorator = base::SyntaxExtension::Decorator(box reflect_expand);
+  let decorator = base::SyntaxExtension::Decorator(box expand_reflect);
   reg.register_syntax_extension(interned_name, decorator);
 }
