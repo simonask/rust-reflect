@@ -1,5 +1,7 @@
 #![feature(plugin_registrar, phase, quote, macro_rules)]
 
+//! Reflect compiler plugin
+
 extern crate rustc;
 extern crate syntax;
 extern crate phf;
@@ -155,6 +157,7 @@ fn generate_get_type_info_impl_for_struct(
   ).unwrap()
 }
 
+/// Generate code for reflection over a struct.
 pub fn reflect_on_struct(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>|) {
   use syntax::ast::{Item_};
   match &item.node {
@@ -167,12 +170,28 @@ pub fn reflect_on_struct(context: &mut ExtCtxt, span: Span, meta_item: &ast::Met
   };
 }
 
+/// Generate code for reflection over an enum.
+pub fn reflect_on_enum(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>|) {
+  context.span_bug(span, "reflect_on_enum NIY");
+}
+
+/// Generate code for reflection over a newtype.
+pub fn reflect_on_ty(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>|) {
+  context.span_bug(span, "reflect_on_ty NIY");
+}
+
 fn expand_reflect(context: &mut ExtCtxt, span: Span, meta_item: &ast::MetaItem, item: &ast::Item, push: |P<ast::Item>| ) {
   use syntax::ast::{Item_};
   match &item.node {
     &Item_::ItemStruct(_, _) => {
       reflect_on_struct(context, span, meta_item, item, push);
     },
+    &Item_::ItemEnum(_, _) => {
+      reflect_on_enum(context, span, meta_item, item, push);
+    },
+    &Item_::ItemTy(_, _) => {
+      reflect_on_ty(context, span, meta_item, item, push);
+    }
     _ => {
       context.span_err(span, "#[reflect] attribute can only be used on structs and enums.")
     }

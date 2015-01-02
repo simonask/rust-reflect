@@ -11,28 +11,33 @@ impl Copy for AttrError {}
 
 pub type AttrResult<T> = Result<T, AttrError>;
 
+/// Attribute where both the owner type and the field type are known.
 pub trait Attribute<O, T> {
   fn get(&self, owner: &O) -> AttrResult<T>;
   fn set(&self, owner: &mut O, new_value: T) -> AttrResult<()>;
 }
 
+/// Attribute where only the field type is known.
 pub trait FieldAttribute<T> {
   fn get(&self, owner: &Reflect) -> AttrResult<T>;
   fn set(&self, owner: &mut Reflect, new_value: T) -> AttrResult<()>;
 }
 
+/// Attribute where only the owner type is known.
 pub trait OwnerAttribute<O>: Sync + 'static {
   fn get(&self, owner: &O) -> AttrResult<Box<Reflect>>;
   fn set(&self, owner: &mut O, new_value: &Reflect) -> AttrResult<()>;
   fn type_info(&self) -> &'static Type<'static>;
 }
 
+/// Attribute where neither the owner type nor the field type are known.
 pub trait AnyAttribute: Sync + 'static {
   fn get(&self, owner: &Reflect) -> AttrResult<Box<Reflect>>;
   fn set(&self, owner: &mut Reflect, new_value: &Reflect) -> AttrResult<()>;
   fn type_info(&self) -> &'static Type<'static>;
 }
 
+/// A map of named attributes.
 pub type AttributeMap = phf::Map<&'static str, fn() -> &'static AnyAttribute>;
 
 impl<O, T, X> FieldAttribute<T> for X
