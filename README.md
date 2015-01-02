@@ -43,6 +43,7 @@ fn main() {
 
 # TODOs
 
+- Composites / runtime structs
 - Enums
 - Observers
 - Signals/slots
